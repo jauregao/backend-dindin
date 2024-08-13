@@ -1,3 +1,5 @@
+import { EType } from '@prisma/client';
+
 export class CreateTransactionDto {
   type: EType;
   description: string;
