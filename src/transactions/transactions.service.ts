@@ -1,26 +1,80 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class TransactionsService {
-  create(createTransactionDto: CreateTransactionDto) {
-    return 'This action adds a new transaction';
+  constructor(private readonly prismaService: PrismaService) {}
+
+  async create(createTransactionDto: CreateTransactionDto, user_id: string) {
+    const category = await this.prismaService.category.findFirst({
+      where: { id: createTransactionDto.category_id },
+    });
+
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+
+    const transaction = await this.prismaService.bankTransaction.create({
+      data: {
+        type: createTransactionDto.type,
+        description: createTransactionDto.description,
+        value: createTransactionDto.value,
+        date: new Date(createTransactionDto.date),
+        user_id,
+        category_description: category.description,
+        category_id: category.id,
+      },
+    });
+
+    return transaction;
   }
 
-  findAll() {
-    return `This action returns all transactions`;
+  async findAll(user_id: string) {
+    return await this.prismaService.bankTransaction.findMany({
+      where: {
+        user_id,
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} transaction`;
+  async findOne(id: string, user_id: string) {
+    const transaction = await this.prismaService.bankTransaction.findFirst({
+      where: {
+        id,
+        user_id,
+      },
+    });
+
+    return transaction;
   }
 
-  update(id: number, updateTransactionDto: UpdateTransactionDto) {
-    return `This action updates a #${id} transaction`;
+  async update(
+    id: string,
+    updateTransactionDto: UpdateTransactionDto,
+    user_id: string,
+  ) {
+    const transaction = await this.prismaService.bankTransaction.update({
+      data: {
+        user_id,
+        ...updateTransactionDto,
+      },
+      where: {
+        id,
+        user_id,
+      },
+    });
+    return transaction;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} transaction`;
+  async remove(id: string, user_id: string) {
+    await this.prismaService.bankTransaction.delete({
+      where: {
+        id,
+        user_id,
+      },
+    });
+    return;
   }
 }

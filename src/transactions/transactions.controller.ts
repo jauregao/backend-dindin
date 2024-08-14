@@ -1,34 +1,75 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Res,
+  HttpStatus,
+} from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { JwtAuthGuard } from 'src/users/auth/guards/jwt-auth.guard';
+import { User } from '@prisma/client';
+import { GetUser } from 'src/decorators/user.decorator';
+import { Response } from 'express';
 
 @Controller('transactions')
+@UseGuards(JwtAuthGuard)
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
   @Post()
-  create(@Body() createTransactionDto: CreateTransactionDto) {
-    return this.transactionsService.create(createTransactionDto);
+  async create(
+    @Body() createTransactionDto: CreateTransactionDto,
+    @Res() res: Response,
+    @GetUser() user: User,
+  ) {
+    const transaction = await this.transactionsService.create(
+      createTransactionDto,
+      user.id,
+    );
+    return res.status(HttpStatus.CREATED).json(transaction);
   }
 
   @Get()
-  findAll() {
-    return this.transactionsService.findAll();
+  async findAll(@GetUser() user: User, @Res() res: Response) {
+    const transactions = await this.transactionsService.findAll(user.id);
+    return res.status(HttpStatus.OK).json(transactions);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionsService.findOne(+id);
+  async findOne(
+    @Param('id') id: string,
+    @Res() res: Response,
+    @GetUser() user: User,
+  ) {
+    const transaction = await this.transactionsService.findOne(id, user.id);
+    return res.status(HttpStatus.OK).json(transaction);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTransactionDto: UpdateTransactionDto) {
-    return this.transactionsService.update(+id, updateTransactionDto);
+  async update(
+    @Param('id') id: string,
+    @Res() res: Response,
+    @GetUser() user: User,
+    @Body() updateTransactionDto: UpdateTransactionDto,
+  ) {
+    const transaction = await this.transactionsService.update(
+      id,
+      updateTransactionDto,
+      user.id,
+    );
+    return res.status(HttpStatus.OK).json(transaction);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.transactionsService.remove(+id);
+  remove(@Param('id') id: string, @Res() res: Response, @GetUser() user: User) {
+    this.transactionsService.remove(id, user.id);
+    return res.status(HttpStatus.NO_CONTENT).json();
   }
 }
