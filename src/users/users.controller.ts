@@ -8,14 +8,13 @@ import {
   BadRequestException,
   HttpStatus,
   Res,
-  Req,
   UseGuards,
   // UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { User } from '@prisma/client';
 import { GetUser } from 'src/decorators/user.decorator';
@@ -42,11 +41,7 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findOne(
-    @Req() req: Request,
-    @Res() res: Response,
-    @GetUser() user: User,
-  ) {
+  async findOne(@Res() res: Response, @GetUser() user: User) {
     const { id } = user;
     const userExists = await this.usersService.findUserById(id);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -68,7 +63,7 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Delete()
-  async remove(@Res() res: Response, @GetUser() user: User) {
+  remove(@Res() res: Response, @GetUser() user: User) {
     const { id } = user;
     this.usersService.remove(id);
     return res.status(HttpStatus.NO_CONTENT).json();
