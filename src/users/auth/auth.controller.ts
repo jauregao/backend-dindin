@@ -1,15 +1,29 @@
-import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
-import { LoginUserDto } from '../dto/login-user.dto';
+import {
+  Controller,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { User } from '@prisma/client';
 
 @Controller()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('sign-in')
-  async login(@Body() data: LoginUserDto, @Res() res: Response) {
-    const user = await this.authService.login(data);
-    return res.status(HttpStatus.OK).json(user);
+  @UseGuards(LocalAuthGuard)
+  @Post('login')
+  async login(@Req() req: Request, @Res() res: Response) {
+    const user = req.user as User;
+    const token = await this.authService.login(user);
+    return res.status(HttpStatus.OK).json({
+      id: user.id,
+      name: user.name,
+      token: token.access_token,
+    });
   }
 }

@@ -4,21 +4,22 @@ import {
   Post,
   Body,
   Patch,
-  Param,
   Delete,
   BadRequestException,
   HttpStatus,
   Res,
-  UseInterceptors,
+  Req,
+  UseGuards,
+  // UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Response } from 'express';
-import { UserInterceptor } from './users.interceptor';
+import { Request, Response } from 'express';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { User } from '@prisma/client';
 
 @Controller('users')
-@UseInterceptors(UserInterceptor)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -38,18 +39,27 @@ export class UsersController {
     return res.status(HttpStatus.CREATED).json(user);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findUserById(id);
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  async findOne(@Req() req: Request) {
+    const { id } = req.user as User;
+    const user = await this.usersService.findUserById(id);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...userFound } = user;
+    return userFound;
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  @UseGuards(JwtAuthGuard)
+  @Patch()
+  async update(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
+    const { id } = req.user as User;
     return this.usersService.update(id, updateUserDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
+  @UseGuards(JwtAuthGuard)
+  @Delete()
+  async remove(@Req() req: Request) {
+    const { id } = req.user as User;
     return this.usersService.remove(id);
   }
 }

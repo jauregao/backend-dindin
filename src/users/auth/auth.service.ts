@@ -1,34 +1,34 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { LoginUserDto } from '../dto/login-user.dto';
-import * as bcrypt from 'bcrypt';
-import { UsersService } from '../users.service';
+import { Injectable } from '@nestjs/common';
+import { UsersService } from 'src/users/users.service';
+import { compare } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-
+import { User } from '@prisma/client';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UsersService,
-    private readonly jwtService: JwtService,
+    private usersService: UsersService,
+    private jwtService: JwtService,
   ) {}
 
-  async login(data: LoginUserDto) {
-    const user = await this.userService.findUserByEmail(data.email);
+  async validateUser(email: string, pass: string): Promise<User> {
+    const user = await this.usersService.findUserByEmail(email);
     if (!user) {
-      throw new BadRequestException('Invalid credentials.');
+      return null;
     }
 
-    const validPass = await bcrypt.compare(data.password, user.password);
+    const validPass = await compare(pass, user.password);
+
     if (!validPass) {
-      throw new BadRequestException('Invalid credentials.');
+      return null;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...result } = user;
-    const token = this.jwtService.sign(result);
+    return user;
+  }
 
+  async login(user: User) {
+    const payload = { id: user.id };
     return {
-      user: result,
-      token,
+      access_token: this.jwtService.sign(payload),
     };
   }
 }
