@@ -14,33 +14,33 @@ datasource db {
 }
 
 model User {
-  id          String        @id @default(uuid())
+  id          String            @id @default(uuid())
   name        String
-  email       String        @unique
+  email       String            @unique
   password    String
-  Transaction Transaction[]
+  Transaction BankTransaction[]
 
   @@map("users")
 }
 
 model Category {
-  id          String        @id @default(uuid())
-  description String        @unique
-  Transaction Transaction[]
+  id          String            @id @default(uuid())
+  description String            @unique
+  Transaction BankTransaction[]
 
   @@unique([id, description])
   @@map("categories")
 }
 
-model Transaction {
+model BankTransaction {
   id                   String   @id @default(uuid())
   type                 EType
   description          String
   value                Int
-  data                 DateTime
+  date                 DateTime
   user                 User     @relation(fields: [user_id], references: [id])
   user_id              String
-  category             Category @relation(fields: [category_id, category_description], references: [id, description])
+  category             Category @relation(fields: [category_id], references: [id])
   category_id          String
   category_description String
 }

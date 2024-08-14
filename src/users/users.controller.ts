@@ -18,6 +18,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { User } from '@prisma/client';
+import { GetUser } from 'src/decorators/user.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -41,25 +42,35 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findOne(@Req() req: Request) {
-    const { id } = req.user as User;
-    const user = await this.usersService.findUserById(id);
+  async findOne(
+    @Req() req: Request,
+    @Res() res: Response,
+    @GetUser() user: User,
+  ) {
+    const { id } = user;
+    const userExists = await this.usersService.findUserById(id);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, ...userFound } = user;
-    return userFound;
+    const { password: _, ...userFound } = userExists;
+    return res.status(HttpStatus.OK).json(userFound);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch()
-  async update(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
-    const { id } = req.user as User;
-    return this.usersService.update(id, updateUserDto);
+  async update(
+    @Body() updateUserDto: UpdateUserDto,
+    @Res() res: Response,
+    @GetUser() user: User,
+  ) {
+    const { id } = user;
+    this.usersService.update(id, updateUserDto);
+    return res.status(HttpStatus.NO_CONTENT).json();
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete()
-  async remove(@Req() req: Request) {
-    const { id } = req.user as User;
-    return this.usersService.remove(id);
+  async remove(@Res() res: Response, @GetUser() user: User) {
+    const { id } = user;
+    this.usersService.remove(id);
+    return res.status(HttpStatus.NO_CONTENT).json();
   }
 }
