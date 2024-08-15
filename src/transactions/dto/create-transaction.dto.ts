@@ -1,19 +1,20 @@
 import { EType } from '@prisma/client';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, Min } from 'class-validator';
 
 export class CreateTransactionDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Type can not be empty.' })
   type: EType;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Description can not be empty.' })
   description: string;
 
-  @IsNotEmpty()
+  @Min(0, { message: 'Value must be greater than zero.' })
+  @IsNotEmpty({ message: 'Value can not be empty.' })
   value: number;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Date can not be empty.' })
   date: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Category id can not be empty.' })
   category_id: string;
 }

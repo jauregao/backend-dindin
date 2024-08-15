@@ -57,7 +57,18 @@ export class UsersController {
     @GetUser() user: User,
   ) {
     const { id } = user;
-    this.usersService.update(id, updateUserDto);
+
+    const emailExits = await this.usersService.findUserByEmail(
+      updateUserDto.email,
+    );
+
+    if (emailExits) {
+      return new BadRequestException(
+        `Email ${updateUserDto.email} is already in use.`,
+      );
+    }
+
+    await this.usersService.update(id, updateUserDto);
     return res.status(HttpStatus.NO_CONTENT).json();
   }
 
