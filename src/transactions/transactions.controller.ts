@@ -9,6 +9,7 @@ import {
   UseGuards,
   Res,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -37,8 +38,15 @@ export class TransactionsController {
   }
 
   @Get()
-  async findAll(@GetUser() user: User, @Res() res: Response) {
-    const transactions = await this.transactionsService.findAll(user.id);
+  async findAll(
+    @GetUser() user: User,
+    @Res() res: Response,
+    @Query('filter') filter?: string[],
+  ) {
+    const transactions = await this.transactionsService.findAll(
+      user.id,
+      filter,
+    );
     return res.status(HttpStatus.OK).json(transactions);
   }
 

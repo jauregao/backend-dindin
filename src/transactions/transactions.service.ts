@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TransactionsService {
@@ -31,11 +32,21 @@ export class TransactionsService {
     return transaction;
   }
 
-  async findAll(user_id: string) {
+  async findAll(user_id: string, categories?: string[]) {
+    const whereCondition: Prisma.BankTransactionWhereInput = {
+      user_id,
+    };
+
+    if (categories && categories.length > 0) {
+      whereCondition.category = {
+        description: {
+          in: categories,
+        },
+      };
+    }
+
     return await this.prismaService.bankTransaction.findMany({
-      where: {
-        user_id,
-      },
+      where: whereCondition,
     });
   }
 
